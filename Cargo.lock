@@ -31,6 +31,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anstyle"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2faccea4cc4ab4a667ce676a30e8ec13922a692c99bb8f5b11f1502c72e04220"
+
+[[package]]
 name = "anyhow"
 version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -432,6 +438,7 @@ dependencies = [
 name = "text_3d_graphics"
 version = "0.1.0"
 dependencies = [
+ "anstyle",
  "crossterm",
  "error-stack",
  "glam",

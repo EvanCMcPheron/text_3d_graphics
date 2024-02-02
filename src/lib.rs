@@ -5,7 +5,19 @@ pub mod printing;
 pub mod rendering;
 pub mod resources;
 
+pub mod prelude {
+    pub use {
+        anstyle::{Color, RgbColor, Style},
+        glam::{
+            f32::{quat, vec2, vec3a, Quat, Vec2, Vec3A},
+            i32::{ivec2, IVec2},
+            u32::{uvec2, UVec2},
+        },
+    };
+}
+
 pub(crate) use {
+    anstyle::{Color, RgbColor, Style},
     crossterm::{
         cursor, execute,
         terminal::{BeginSynchronizedUpdate, EndSynchronizedUpdate},
@@ -16,6 +28,6 @@ pub(crate) use {
         i32::{ivec2, IVec2},
         u32::{uvec2, UVec2},
     },
-    thiserror::Error,
     itertools::Itertools,
+    thiserror::Error,
 };

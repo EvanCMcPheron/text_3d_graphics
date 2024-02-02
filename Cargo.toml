@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anstyle = "1.0.5"
 crossterm = "0.27.0"
 error-stack = "0.4.1"
 glam = "0.25.0"

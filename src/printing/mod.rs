@@ -1,8 +1,10 @@
 pub(crate) use super::*;
 
+#[derive(Clone)]
 pub struct CharBuffer {
-    value: Vec<String>, // Vec < Row >
-    dimensions: UVec2,  // Rows, Columns
+    value: Vec<Vec<char>>, // Vec < Row >
+    colors: Vec<Vec<RgbColor>>,
+    dimensions: UVec2, // Rows, Columns
 }
 
 #[derive(Debug, Error)]
@@ -11,67 +13,121 @@ pub enum CharBufferError {
     InvalidConstructorString(String),
     #[error("Out of bounds access. Attempted Position {attempt} in a {dimensions} dimensioned CharBuffer")]
     OutOfBounds { attempt: UVec2, dimensions: UVec2 },
+    #[error("Failed to convert usize to u32 or vice versa")]
+    UsizeConversion,
 }
 
 impl CharBuffer {
-    pub fn from_str(string: &str) -> Result<Self, CharBufferError> {
-        let value: Vec<_> = string.split('\n').map(|s| s.to_owned()).collect();
-
-        let unique_row_lengths = value.iter().map(|v| v.len()).dedup().count();
-
-        if unique_row_lengths != 1 {
-            return Err(Report::new(CharBufferError::InvalidConstructorString(
-                string.to_owned(),
-            )))
-            .attach_printable_lazy(|| {
-                format!(
-                    "There were {unique_row_lengths} unique row lengths when there should be one"
-                )
-            });
-        }
-
-        let dimensions = uvec2(
-            value
-                .len()
-                .try_into()
-                .expect("Couldn't convert usize to u32"),
-            value
-                .first()
-                .ok_or(Report::new(CharBufferError::InvalidConstructorString(
-                    string.to_owned(),
-                )))
-                .attach_printable_lazy(|| "the string had no rows, it's probably empty")?
-                .len()
-                .try_into()
-                .expect("Couldn't convert usize to u32"),
-        );
-
-        Ok(Self { value, dimensions })
-    }
-    pub fn set_char(&mut self, position: UVec2, char: char) -> Result<(), CharBufferError> {
-        if position.x >= self.dimensions.x || position.y >= self.dimensions.y {
-            return Err(Report::new(CharBufferError::OutOfBounds {
+    pub fn set_char(
+        &mut self,
+        position: UVec2,
+        char: Option<char>,
+        color: Option<RgbColor>,
+    ) -> Result<(), CharBufferError> {
+        //! Sets character and/or color at position specified, will return error if value is out of
+        //! range.
+        //! The '.' char is reserved for a filled in character, so don't use it unintentionally.
+        //! ```
+        //! pub use text_3d_graphics::printing::CharBuffer;
+        //! pub use text_3d_graphics::prelude::*;
+        //! let mut cb = CharBuffer::from_str("   \n @ \n  +\n",RgbColor(255,255,255)).unrwap();
+        //! cb.set_char(uvec2(2,1),Some('*'),None);
+        //! assert_eq!("   \n @ \n *+\n",cb.to_string());
+        //! ```
+        let report = || {
+            Report::new(CharBufferError::OutOfBounds {
                 attempt: position,
                 dimensions: self.dimensions,
-            }));
+            })
+        };
+
+        let x = TryInto::<usize>::try_into(position.x)
+            .change_context_lazy(|| CharBufferError::UsizeConversion)
+            .attach_printable_lazy(|| "u32 -> usize")?;
+        let y = TryInto::<usize>::try_into(position.y)
+            .change_context_lazy(|| CharBufferError::UsizeConversion)
+            .attach_printable_lazy(|| "u32 -> usize")?;
+
+        if let Some(char) = char {
+            *(self
+                .value
+                .get_mut(y)
+                .ok_or(report())?
+                .get_mut(x)
+                .ok_or(report())?) = char;
+        }
+        if let Some(color) = color {
+            (*self
+                .colors
+                .get_mut(y)
+                .ok_or(report())?
+                .get_mut(x)
+                .ok_or(report())?) = color
         }
 
-        let x = TryInto::<usize>::try_into(position.x).expect("Couldn't convert u32 to usize");
-        let y = TryInto::<usize>::try_into(position.y).expect("Couldn't convert u32 to usize");
-
-        self.value
-            .get_mut(y)
-            .unwrap()
-            .replace_range(x..(x + 1), &char.to_string());
         Ok(())
     }
-    pub fn fill(&mut self, char: char) {
-        for row in self.value.iter_mut() {
-            *row = String::from_iter((0..row.len()).map(|_| char))
-        }
+    pub fn fill(&mut self, char: char, color: RgbColor) {
+        self.value
+            .iter_mut()
+            .map(|v| v.iter_mut())
+            .flatten()
+            .zip(self.colors.iter_mut().map(|v| v.iter_mut()).flatten())
+            .for_each(|(ch, co)| {
+                *ch = char;
+                *co = color;
+            });
     }
     pub fn to_string(&self) -> String {
-        self.value.iter().map(|row| format!("{}\n", row)).collect()
+        self.value
+            .iter()
+            .zip(self.colors.iter())
+            .map(|(row, colors)| {
+                let mut val = row
+                    .iter()
+                    .zip(colors.iter())
+                    .map(|(char, color)| {
+                        let style = anstyle::Style::new().fg_color(Some(anstyle::Color::Rgb(*color))).bg_color(
+                            if *char == '.' {
+                                Some(anstyle::Color::Rgb(*color))
+                            } else {
+                                None
+                            }
+                        );
+                        format!("{}{}{}",anstyle::Reset, style, char)
+                    })
+                    .collect::<String>();
+                val.push('\n');
+                val
+            })
+            .collect::<String>()
+    }
+    pub fn new(dimensions: UVec2, char: char, color: RgbColor) -> Result<Self, CharBufferError> {
+        Ok(Self {
+            value: vec![
+                vec![
+                    char;
+                    TryInto::<usize>::try_into(dimensions.y)
+                        .change_context_lazy(|| CharBufferError::UsizeConversion)
+                        .attach_printable_lazy(|| "u32 -> usize")?
+                ];
+                TryInto::<usize>::try_into(dimensions.x)
+                    .change_context_lazy(|| CharBufferError::UsizeConversion)
+                    .attach_printable_lazy(|| "u32 -> usize")?
+            ],
+            colors: vec![
+                vec![
+                    color;
+                    TryInto::<usize>::try_into(dimensions.y)
+                        .change_context_lazy(|| CharBufferError::UsizeConversion)
+                        .attach_printable_lazy(|| "u32 -> usize")?
+                ];
+                TryInto::<usize>::try_into(dimensions.x)
+                    .change_context_lazy(|| CharBufferError::UsizeConversion)
+                    .attach_printable_lazy(|| "u32 -> usize")?
+            ],
+            dimensions,
+        })
     }
 }
 
