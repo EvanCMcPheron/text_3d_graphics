@@ -9,12 +9,10 @@ use thiserror::Error;
 struct MainError;
 
 fn main() -> Result<(), MainError> {
-    let mut cb = CharBuffer::new(uvec2(5, 5), '+', RgbColor(255, 255, 255))
+    let mut cb = CharBuffer::new(uvec2(15, 15), ' ', RgbColor(255, 255, 255))
         .change_context_lazy(|| MainError)?;
-    cb.set_char(uvec2(0, 2), Some('@'), Some(RgbColor(255, 100, 000))).change_context_lazy(|| MainError)?;
-    cb.set_char(uvec2(3, 1), Some('p'), Some(RgbColor(255, 255, 000))).change_context_lazy(|| MainError)?;
-    cb.set_char(uvec2(4, 3), Some('O'), Some(RgbColor(255, 100, 222))).change_context_lazy(|| MainError)?;
-    cb.set_char(uvec2(3, 3), Some('.'), Some(RgbColor(200, 000, 150))).change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(0,0), ivec2(0, 15), '.', RgbColor(100, 150, 250)).change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(14,15), ivec2(14, 0), '.', RgbColor(100, 150, 250)).change_context_lazy(|| MainError)?;
     println!("{cb}");
     Ok(())
 }

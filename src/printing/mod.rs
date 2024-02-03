@@ -1,5 +1,7 @@
 pub(crate) use super::*;
 
+pub mod drawing;
+
 #[derive(Clone)]
 pub struct CharBuffer {
     value: Vec<Vec<char>>, // Vec < Row >
@@ -79,6 +81,7 @@ impl CharBuffer {
             });
     }
     pub fn to_string(&self) -> String {
+        let reset = format!("{}", anstyle::Reset);
         self.value
             .iter()
             .zip(self.colors.iter())
@@ -87,16 +90,17 @@ impl CharBuffer {
                     .iter()
                     .zip(colors.iter())
                     .map(|(char, color)| {
-                        let style = anstyle::Style::new().fg_color(Some(anstyle::Color::Rgb(*color))).bg_color(
-                            if *char == '.' {
+                        let style = anstyle::Style::new()
+                            .fg_color(Some(anstyle::Color::Rgb(*color)))
+                            .bg_color(if *char == '.' {
                                 Some(anstyle::Color::Rgb(*color))
                             } else {
                                 None
-                            }
-                        );
-                        format!("{}{}{}",anstyle::Reset, style, char)
+                            });
+                        format!("{}{}{}{}", reset, style, char, char)
                     })
                     .collect::<String>();
+                val.push_str(&reset);
                 val.push('\n');
                 val
             })

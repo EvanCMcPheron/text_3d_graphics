@@ -13,6 +13,7 @@ pub mod prelude {
             i32::{ivec2, IVec2},
             u32::{uvec2, UVec2},
         },
+        super::printing::CharBuffer
     };
 }
 
