@@ -11,8 +11,12 @@ struct MainError;
 fn main() -> Result<(), MainError> {
     let mut cb = CharBuffer::new(uvec2(15, 15), ' ', RgbColor(255, 255, 255))
         .change_context_lazy(|| MainError)?;
-    cb.draw_line(ivec2(0,0), ivec2(0, 15), '.', RgbColor(100, 150, 250)).change_context_lazy(|| MainError)?;
-    cb.draw_line(ivec2(14,15), ivec2(14, 0), '.', RgbColor(100, 150, 250)).change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(0, 0), ivec2(0, 15), '.', RgbColor(100, 150, 250))
+        .change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(14, 15), ivec2(14, 0), '.', RgbColor(100, 150, 250))
+        .change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(18, 19), ivec2(-1, -2), '.', RgbColor(200, 100, 50))
+        .change_context_lazy(|| MainError)?;
     println!("{cb}");
     Ok(())
 }
