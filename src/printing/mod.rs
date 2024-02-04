@@ -2,10 +2,14 @@ pub(crate) use super::*;
 
 pub mod drawing;
 
-#[derive(Clone)]
+#[derive(Clone, Getters, MutGetters, Setters)]
 pub struct CharBuffer {
+    #[getset(get="pub")]
     value: Vec<Vec<char>>, // Vec < Row >
+    #[getset(get="pub")]
     colors: Vec<Vec<RgbColor>>,
+
+    #[getset(get="pub")]
     dimensions: UVec2, // Rows, Columns
 }
 
@@ -132,6 +136,21 @@ impl CharBuffer {
             ],
             dimensions,
         })
+    }
+    pub fn get_char(&self, pos: UVec2) -> Option<(char, RgbColor)> {
+        if self.is_valid_point(ivec2(pos.x as i32, pos.y as i32)) {
+            return Some((
+                *self.value.get(pos.y as usize).unwrap().get(pos.x as usize).unwrap(),
+                *self.colors.get(pos.y as usize).unwrap().get(pos.x as usize).unwrap()
+            ));
+        }
+        None
+    }
+    pub fn set_dimensions(&mut self, dimensions: UVec2, character: char, color: RgbColor) {
+        self.value.resize(dimensions.x as usize, vec![character; dimensions.y as usize]);
+        self.value.iter_mut().for_each(|v| v.resize(dimensions.y as usize, character));
+        self.colors.resize(dimensions.x as usize, vec![color; dimensions.y as usize]);
+        self.colors.iter_mut().for_each(|v| v.resize(dimensions.y as usize, color));
     }
 }
 

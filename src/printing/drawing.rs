@@ -16,11 +16,10 @@ impl CharBuffer {
         &mut self,
         mut start_point: IVec2,
         mut end_point: IVec2,
-        character: char,
-        color: RgbColor,
+        value: fn(pos: UVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         if start_point.x == end_point.x {
-            return self.draw_vertical_line(start_point, end_point, character, color);
+            return self.draw_vertical_line(start_point, end_point, value);
         } else if start_point.x > end_point.x {
             std::mem::swap(&mut start_point, &mut end_point);
         }
@@ -29,11 +28,11 @@ impl CharBuffer {
         let slope = dif_vec.y as f32 / dif_vec.x as f32;
 
         if slope.abs() > 1.0 {
-            self.draw_steep_line(start_point, end_point, slope, character, color)?;
+            self.draw_steep_line(start_point, end_point, slope, value)?;
             return Ok(());
         }
 
-        self.draw_shallow_line(start_point, end_point, slope, character, color)?;
+        self.draw_shallow_line(start_point, end_point, slope, value)?;
 
         Ok(())
     }
@@ -41,16 +40,17 @@ impl CharBuffer {
         &mut self,
         mut start_point: IVec2,
         mut end_point: IVec2,
-        character: char,
-        color: RgbColor,
+        value: fn(pos: UVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         if start_point.y == end_point.y {
             if self.is_valid_point(start_point) {
+                let (character, color) =
+                    value(uvec2(start_point.x as u32, start_point.y as u32), &self);
                 return self
                     .set_char(
                         uvec2(start_point.x as u32, start_point.y as u32),
-                        Some(character),
-                        Some(color),
+                        character,
+                        color,
                     )
                     .change_context_lazy(|| DrawError::Line(start_point, end_point));
             }
@@ -65,7 +65,8 @@ impl CharBuffer {
         (std::cmp::max(0, start_point.y)..=std::cmp::min(end_point.y, self.dimensions.y as i32 - 1))
             .map(|v| v as u32)
             .map(|y| {
-                self.set_char(uvec2(x, y), Some(character), Some(color))
+                let (character, color) = value(uvec2(x, y), &self);
+                self.set_char(uvec2(x, y), character, color)
                     .change_context_lazy(|| DrawError::Line(start_point, end_point))
                     .attach_printable_lazy(|| format!("Failed to print char at {x},{y}"))
             })
@@ -82,8 +83,7 @@ impl CharBuffer {
         mut start_point: IVec2,
         mut end_point: IVec2,
         slope: f32,
-        character: char,
-        color: RgbColor,
+        value: fn(pos: UVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         if start_point.y > end_point.y {
             std::mem::swap(&mut start_point, &mut end_point)
@@ -94,7 +94,8 @@ impl CharBuffer {
                 if !self.is_valid_point(ivec2(x, y)) {
                     return Ok(());
                 }
-                self.set_char(uvec2(x as u32, y as u32), Some(character), Some(color))
+                let (character, color) = value(uvec2(x as u32, y as u32), &self);
+                self.set_char(uvec2(x as u32, y as u32), character, color)
                     .change_context_lazy(|| DrawError::Line(start_point, end_point))
                     .attach_printable_lazy(|| format!("failed at point {x},{y}"))
             })
@@ -111,8 +112,7 @@ impl CharBuffer {
         mut start_point: IVec2,
         mut end_point: IVec2,
         slope: f32,
-        character: char,
-        color: RgbColor,
+        value: fn(pos: UVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         (start_point.x..=end_point.x)
             .map(|x| {
@@ -120,7 +120,8 @@ impl CharBuffer {
                 if !self.is_valid_point(ivec2(x, y)) {
                     return Ok(());
                 }
-                self.set_char(uvec2(x as u32, y as u32), Some(character), Some(color))
+                let (character, color) = value(uvec2(x as u32, y as u32), &self);
+                self.set_char(uvec2(x as u32, y as u32), character, color)
                     .change_context_lazy(|| DrawError::Line(start_point, end_point))
                     .attach_printable_lazy(|| format!("failed at point {x},{y}"))
             })
@@ -133,4 +134,3 @@ impl CharBuffer {
             })
     }
 }
-

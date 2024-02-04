@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 anstyle = "1.0.5"
+buildstructor = "0.5.4"
 crossterm = "0.27.0"
 error-stack = "0.4.1"
+getset = "0.1.2"
 glam = "0.25.0"
 itertools = "0.12.1"
 rayon = "1.8.1"
