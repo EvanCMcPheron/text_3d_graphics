@@ -44,6 +44,18 @@ impl CharBuffer {
         character: char,
         color: RgbColor,
     ) -> Result<(), DrawError> {
+        if start_point.y == end_point.y {
+            if self.is_valid_point(start_point) {
+                return self
+                    .set_char(
+                        uvec2(start_point.x as u32, start_point.y as u32),
+                        Some(character),
+                        Some(color),
+                    )
+                    .change_context_lazy(|| DrawError::Line(start_point, end_point));
+            }
+            return Ok(());
+        }
         if start_point.y > end_point.y {
             std::mem::swap(&mut start_point, &mut end_point);
         }
@@ -78,7 +90,7 @@ impl CharBuffer {
         }
         (start_point.y..=end_point.y)
             .map(|y| {
-                let x = ((y - start_point.y) as f32 * 1.0/slope + start_point.x as f32) as i32;
+                let x = ((y - start_point.y) as f32 * 1.0 / slope + start_point.x as f32) as i32;
                 if !self.is_valid_point(ivec2(x, y)) {
                     return Ok(());
                 }

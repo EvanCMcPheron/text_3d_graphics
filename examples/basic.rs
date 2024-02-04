@@ -17,6 +17,8 @@ fn main() -> Result<(), MainError> {
         .change_context_lazy(|| MainError)?;
     cb.draw_line(ivec2(18, 19), ivec2(-1, -2), '.', RgbColor(200, 100, 50))
         .change_context_lazy(|| MainError)?;
+    cb.draw_line(ivec2(13, 12), ivec2(13, 12), '.', RgbColor(200, 200, 250))
+        .change_context_lazy(|| MainError)?;
     println!("{cb}");
     Ok(())
 }
