@@ -24,6 +24,11 @@ pub enum CharBufferError {
 }
 
 impl CharBuffer {
+    #[inline]
+    pub fn is_valid_point(&self, point: IVec2) -> bool {
+        (!point.x.is_negative() && !point.y.is_negative())
+            && (point.x < self.dimensions.x as i32 && point.y < self.dimensions.y as i32)
+    }
     pub fn set_char(
         &mut self,
         position: UVec2,
