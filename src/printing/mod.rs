@@ -4,12 +4,12 @@ pub mod drawing;
 
 #[derive(Clone, Getters, MutGetters, Setters)]
 pub struct CharBuffer {
-    #[getset(get="pub")]
+    #[getset(get = "pub")]
     value: Vec<Vec<char>>, // Vec < Row >
-    #[getset(get="pub")]
+    #[getset(get = "pub")]
     colors: Vec<Vec<RgbColor>>,
 
-    #[getset(get="pub")]
+    #[getset(get = "pub")]
     dimensions: UVec2, // Rows, Columns
 }
 
@@ -120,22 +120,22 @@ impl CharBuffer {
             value: vec![
                 vec![
                     char;
-                    TryInto::<usize>::try_into(dimensions.y)
+                    TryInto::<usize>::try_into(dimensions.x)
                         .change_context_lazy(|| CharBufferError::UsizeConversion)
                         .attach_printable_lazy(|| "u32 -> usize")?
                 ];
-                TryInto::<usize>::try_into(dimensions.x)
+                TryInto::<usize>::try_into(dimensions.y)
                     .change_context_lazy(|| CharBufferError::UsizeConversion)
                     .attach_printable_lazy(|| "u32 -> usize")?
             ],
             colors: vec![
                 vec![
                     color;
-                    TryInto::<usize>::try_into(dimensions.y)
+                    TryInto::<usize>::try_into(dimensions.x)
                         .change_context_lazy(|| CharBufferError::UsizeConversion)
                         .attach_printable_lazy(|| "u32 -> usize")?
                 ];
-                TryInto::<usize>::try_into(dimensions.x)
+                TryInto::<usize>::try_into(dimensions.y)
                     .change_context_lazy(|| CharBufferError::UsizeConversion)
                     .attach_printable_lazy(|| "u32 -> usize")?
             ],
@@ -145,17 +145,35 @@ impl CharBuffer {
     pub fn get_char(&self, pos: UVec2) -> Option<(char, RgbColor)> {
         if self.is_valid_point(ivec2(pos.x as i32, pos.y as i32)) {
             return Some((
-                *self.value.get(pos.y as usize).unwrap().get(pos.x as usize).unwrap(),
-                *self.colors.get(pos.y as usize).unwrap().get(pos.x as usize).unwrap()
+                *self
+                    .value
+                    .get(pos.y as usize)
+                    .unwrap()
+                    .get(pos.x as usize)
+                    .unwrap(),
+                *self
+                    .colors
+                    .get(pos.y as usize)
+                    .unwrap()
+                    .get(pos.x as usize)
+                    .unwrap(),
             ));
         }
         None
     }
     pub fn set_dimensions(&mut self, dimensions: UVec2, character: char, color: RgbColor) {
-        self.value.resize(dimensions.x as usize, vec![character; dimensions.y as usize]);
-        self.value.iter_mut().for_each(|v| v.resize(dimensions.y as usize, character));
-        self.colors.resize(dimensions.x as usize, vec![color; dimensions.y as usize]);
-        self.colors.iter_mut().for_each(|v| v.resize(dimensions.y as usize, color));
+        self.value.resize(
+            dimensions.x as usize,
+            vec![character; dimensions.y as usize],
+        );
+        self.value
+            .iter_mut()
+            .for_each(|v| v.resize(dimensions.y as usize, character));
+        self.colors
+            .resize(dimensions.x as usize, vec![color; dimensions.y as usize]);
+        self.colors
+            .iter_mut()
+            .for_each(|v| v.resize(dimensions.y as usize, color));
     }
 }
 

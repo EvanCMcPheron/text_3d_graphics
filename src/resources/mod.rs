@@ -9,20 +9,22 @@ pub enum ResourceError {
     ObjLoadError,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Triangle {
     pub v: [Vec3A; 3],
     pub color: RgbColor,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SimpleMesh {
     pub triangles: Rc<[Triangle]>,
 }
 
 impl Triangle {
     pub fn normal(&self) -> Vec3A {
-        (self.v[2] - self.v[0]).cross(self.v[1] - self.v[0]).normalize()
+        (self.v[2] - self.v[0])
+            .cross(self.v[1] - self.v[0])
+            .normalize()
     }
 }
 

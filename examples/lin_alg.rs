@@ -18,7 +18,7 @@ fn main() -> Result<(), MainError> {
         ..Rasterizer::default()
     };
     for i in -10..=10 {
-        let point = vec3a(0.0, i as f32 / 10.0, 10.7);
+        let point = vec3a(i as f32 / 10.0, 1.0, 2.0);
         println!("{point}->{}",raster.project_point(point));
     }
     Ok(())
