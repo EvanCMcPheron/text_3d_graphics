@@ -15,7 +15,11 @@ impl Behaviour for DrawTriangle {
         delta: f32,
     ) -> std::result::Result<ProcessNext, Box<dyn std::error::Error>> {
         buffer.fill(' ', RgbColor(255, 255, 255));
+        self.rasterizer.clear_frame();
         self.rasterizer.rasterize_triangle(self.triangle, buffer)?;
+
+        self.triangle.v = self.triangle.v.map(|v| v + vec3a(0.0,0.0,0.1 * delta));
+        self.rasterizer.camera.rotate_z_radians(10.0f32.to_radians() * delta);
 
         Ok(ProcessNext::Continue)
     }

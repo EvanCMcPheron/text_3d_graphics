@@ -14,11 +14,12 @@ fn main() -> Result<(), MainError> {
             .aspect_ratio(1.0)
             .fov_y_radians((90.0f32).to_radians())
             .position(vec3(0.0, 0.0, 0.0))
+            .z_near(100.0)
             .build(),
         ..Rasterizer::default()
     };
     for i in -10..=10 {
-        let point = vec3a(i as f32 / 10.0, 1.0, 2.0);
+        let point = vec3a(i as f32 / 10.0, 1.0, 1.0);
         println!("{point}->{}",raster.project_point(point));
     }
     Ok(())

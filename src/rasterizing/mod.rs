@@ -5,6 +5,8 @@ use crate::prelude::*;
 pub enum RasterizationError {
     #[error("failed to convert a u32 to a usize")]
     U32ToUsize,
+    #[error("An error occured while rasterizing a triangle")]
+    TriangleRasterization,
     #[error("unidentified rasterization error")]
     Misc,
 }
@@ -42,7 +44,7 @@ impl DepthBuffer {
             dimensions,
             data: vec![
                 vec![
-                    -f32::INFINITY;
+                    f32::INFINITY;
                     TryInto::<usize>::try_into(dimensions.x)
                         .change_context_lazy(|| RasterizationError::U32ToUsize)?
                 ];
@@ -54,7 +56,7 @@ impl DepthBuffer {
     pub fn clear(&mut self) {
         self.data
             .iter_mut()
-            .for_each(|v| v.iter_mut().for_each(|p| *p = -f32::INFINITY));
+            .for_each(|v| v.iter_mut().for_each(|p| *p = f32::INFINITY));
     }
     pub fn get_value(&self, position: UVec2) -> Option<f32> {
         self.data
@@ -132,7 +134,7 @@ impl Rasterizer {
         );
 
         // Project the points
-        let projected_verticies: [Vec3; 3] = triangle.v.map(|p| {
+        let pv: [Vec3; 3] = triangle.v.map(|p| {
             (self.project_point(p) + vec3(1.0, 1.0, 0.0))
                 * vec3(
                     (char_buffer.dimensions().x >> 1) as f32,
@@ -142,10 +144,34 @@ impl Rasterizer {
         });
 
         // get fn for point on screen -> calculated z value based on projected coords
-        
-        
+        let depth = |p: Vec2| -> f32 {
+            let n = (pv[2] - pv[0]).cross(pv[1] - pv[0]);
+            pv[0].z - (n.x * (p.x - pv[0].x) + n.y * (p.y - pv[0].y)) / n.z
+        };
+
         // create shader including depth buffer check using closure defined above
+        let shader = |p: IVec2, _: &CharBuffer| -> (Option<char>, Option<RgbColor>) {
+            let current_depth = depth(vec2(p.x as f32, p.y as f32));
+            let old_depth = self
+                .depth_buffer
+                .as_ref()
+                .unwrap()
+                .get_value(uvec2(p.x as u32, p.y as u32))
+                .unwrap_or_else(|| panic!("{p}"));
+            if current_depth <= old_depth {
+                self.depth_buffer
+                    .as_mut()
+                    .unwrap()
+                    .set_value(uvec2(p.x as u32, p.y as u32), current_depth);
+                return (Some('.'), Some(color));
+            }
+            (None, None)
+        };
+
         // draw triangle
+        char_buffer
+            .draw_triangle(pv.map(|v| ivec2(v.x as i32, v.y as i32)), shader)
+            .change_context_lazy(|| RasterizationError::TriangleRasterization)?;
 
         Ok(())
     }
@@ -171,6 +197,15 @@ impl Camera {
         self.perspective_tesnor
             .unwrap()
             .project_point3(self.view_tensor.unwrap().transform_point3a(rhs).into())
+    }
+    pub fn rotate_x_radians(&mut self, theta: f32) {
+        self.rotate_self(Quat::from_rotation_x(theta));
+    }
+    pub fn rotate_y_radians(&mut self, theta: f32) {
+        self.rotate_self(Quat::from_rotation_y(theta));
+    }
+    pub fn rotate_z_radians(&mut self, theta: f32) {
+        self.rotate_self(Quat::from_rotation_z(theta));
     }
 }
 

@@ -12,7 +12,7 @@ impl CharBuffer {
     pub fn draw_triangle(
         &mut self,
         mut verticies: [IVec2; 3],
-        shading: fn(pos: IVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
+        mut shading: impl FnMut(IVec2, &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         verticies.sort_by(|a, b| a.y.cmp(&b.y));
 
@@ -34,10 +34,10 @@ impl CharBuffer {
         );
 
         if top_triangle {
-            self.draw_top_triangle([midpoint, verticies[1], verticies[2]], shading)?;
+            self.draw_top_triangle([midpoint, verticies[1], verticies[2]], &mut shading)?;
         }
         if bottom_triangle {
-            self.draw_bottom_triangle([verticies[0], verticies[1], midpoint], shading)?;
+            self.draw_bottom_triangle([verticies[0], verticies[1], midpoint], &mut shading)?;
         }
 
         Ok(())
@@ -45,7 +45,7 @@ impl CharBuffer {
     fn draw_top_triangle(
         &mut self,
         mut verticies: [IVec2; 3],
-        shading: fn(pos: IVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
+        mut shading: &mut impl FnMut(IVec2, &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         let delta = (
             verticies[2] - verticies[1],
@@ -64,8 +64,8 @@ impl CharBuffer {
             })
             .flatten()
         {
-            let shade = shading(ver, &self);
             if self.is_valid_point(ver) {
+                let shade = shading(ver, &self);
                 self.set_char(uvec2(ver.x as u32, ver.y as u32), shade.0, shade.1)
                     .change_context_lazy(|| DrawError::Triangle(verticies))
                     .attach_printable_lazy(|| format!("Failed at point: {ver}"))?;
@@ -76,7 +76,7 @@ impl CharBuffer {
     fn draw_bottom_triangle(
         &mut self,
         mut verticies: [IVec2; 3],
-        shading: fn(pos: IVec2, buf: &CharBuffer) -> (Option<char>, Option<RgbColor>),
+        shading: &mut impl FnMut(IVec2, &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
         let delta = (
             verticies[0] - verticies[1],
@@ -95,8 +95,8 @@ impl CharBuffer {
             })
             .flatten()
         {
-            let shade = shading(ver, &self);
             if self.is_valid_point(ver) {
+                let shade = shading(ver, &self);
                 self.set_char(uvec2(ver.x as u32, ver.y as u32), shade.0, shade.1)
                     .change_context_lazy(|| DrawError::Triangle(verticies))
                     .attach_printable_lazy(|| format!("Failed at point: {ver}"))?;
