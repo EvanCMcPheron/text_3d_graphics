@@ -5,7 +5,8 @@ use thiserror::Error;
 
 struct DrawTriangle {
     pub rasterizer: Rasterizer,
-    pub triangle: Triangle,
+    pub triangles: Vec<Triangle>,
+    pub elapsed: f32,
 }
 
 impl Behaviour for DrawTriangle {
@@ -14,12 +15,18 @@ impl Behaviour for DrawTriangle {
         buffer: &mut CharBuffer,
         delta: f32,
     ) -> std::result::Result<ProcessNext, Box<dyn std::error::Error>> {
-        buffer.fill(' ', RgbColor(255, 255, 255));
+        buffer.fill('.', RgbColor(000, 000, 000));
         self.rasterizer.clear_frame();
-        self.rasterizer.rasterize_triangle(self.triangle, buffer)?;
+        self.elapsed += delta;
 
-        self.triangle.v = self.triangle.v.map(|v| v + vec3a(0.0,0.0,0.1 * delta));
-        self.rasterizer.camera.rotate_z_radians(10.0f32.to_radians() * delta);
+        for triangle in &self.triangles {
+            self.rasterizer.rasterize_triangle(*triangle, buffer)?;
+        }
+
+        // self.triangle.v = self.triangle.v.map(|v| v + vec3a(0.0,0.0,0.3 * delta));
+        
+        let rot = -15.0f32.to_radians() * delta;
+        self.rasterizer.camera.rotate_y_radians(rot);
 
         Ok(ProcessNext::Continue)
     }
@@ -40,20 +47,29 @@ fn main() -> Result<(), MainError> {
     };
     let triangle = Triangle {
         v: [
-            vec3a(-1.0, -1.0, 1.0),
-            vec3a(1.0, -1.0, 1.0),
-            vec3a(1.0, 1.0, 1.0),
+            vec3a(-1.0, -1.0, 2.0),
+            vec3a(1.0, -1.0, 2.0),
+            vec3a(1.0, 1.0, 2.0),
         ],
-        color: RgbColor(255, 100, 000),
+        color: RgbColor(255, 100, 200),
+    };
+    let triangle2 = Triangle {
+        v: [
+            vec3a(1.0, -1.0, -2.0),
+            vec3a(-1.0, -1.0, -2.0),
+            vec3a(1.0, 1.0, -2.0),
+        ],
+        color: RgbColor(111, 222, 200),
     };
     let mut my_runner = Runner::builder()
         .fps(10.0)
-        .dimensions(uvec2(30, 20))
-        .color(RgbColor(255, 0, 255))
+        .dimensions(uvec2(50, 50))
+        .color(RgbColor(000, 000, 000))
         .character('.')
         .behaviour(DrawTriangle {
             rasterizer,
-            triangle,
+            triangles: vec![triangle, triangle2],
+            elapsed: 0.0,
         })
         .build();
     my_runner.run().unwrap();

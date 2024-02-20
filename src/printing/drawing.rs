@@ -29,7 +29,7 @@ impl CharBuffer {
         // as the middle vertex. A line between this vertex and the middle vertex would be
         // horizontal and cut the triangle in half.
         let midpoint = ivec2(
-            verticies[0].x + delta.x * (verticies[1].y - verticies[0].y) / delta.y,
+            verticies[0].x.saturating_add( delta.x.saturating_mul(verticies[1].y - verticies[0].y) / delta.y),
             verticies[1].y,
         );
 
@@ -47,13 +47,14 @@ impl CharBuffer {
         mut verticies: [IVec2; 3],
         mut shading: &mut impl FnMut(IVec2, &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
+        println!("top called!: {verticies:?}");
         let delta = (
             verticies[2] - verticies[1],
             verticies[2] - verticies[0],
         );
         let row_edges = |y: i32| -> (i32, i32) {
-            let a = verticies[1].x + delta.0.x * (y - verticies[1].y) / delta.0.y;
-            let b = verticies[0].x + delta.1.x * (y - verticies[0].y) / delta.1.y;
+            let a = verticies[1].x.saturating_add( delta.0.x.saturating_mul(y - verticies[1].y) / delta.0.y);
+            let b = verticies[0].x.saturating_add( delta.1.x.saturating_mul(y - verticies[0].y) / delta.1.y);
 
             (std::cmp::min(a, b), std::cmp::max(a, b))
         };
@@ -78,13 +79,14 @@ impl CharBuffer {
         mut verticies: [IVec2; 3],
         shading: &mut impl FnMut(IVec2, &CharBuffer) -> (Option<char>, Option<RgbColor>),
     ) -> Result<(), DrawError> {
+        println!("bottom called!: {verticies:?}");
         let delta = (
             verticies[0] - verticies[1],
             verticies[0] - verticies[2],
         );
         let row_edges = |y: i32| -> (i32, i32) {
-            let a = verticies[1].x + delta.0.x * (y - verticies[1].y) / delta.0.y;
-            let b = verticies[2].x + delta.1.x * (y - verticies[2].y) / delta.1.y;
+            let a = verticies[1].x.saturating_add( delta.0.x.saturating_mul(y - verticies[1].y) / delta.0.y);
+            let b = verticies[2].x.saturating_add( delta.1.x.saturating_mul(y - verticies[2].y) / delta.1.y);
 
             (std::cmp::min(a, b), std::cmp::max(a, b))
         };

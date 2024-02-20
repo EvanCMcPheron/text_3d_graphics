@@ -137,11 +137,21 @@ impl Rasterizer {
         let pv: [Vec3; 3] = triangle.v.map(|p| {
             (self.project_point(p) + vec3(1.0, 1.0, 0.0))
                 * vec3(
-                    (char_buffer.dimensions().x >> 1) as f32,
-                    (char_buffer.dimensions().y >> 1) as f32,
-                    0.0,
+                    (char_buffer.dimensions().x + 2 >> 1) as f32,
+                    (char_buffer.dimensions().y + 2 >> 1) as f32,
+                    1.0,
                 )
-        });
+        }).map(|v: Vec3| {
+                println!("{v}           ");
+                if v.z > *self.camera.z_near() {
+                    return -v;
+                }
+                v
+            });
+
+        if pv.iter().fold(false, |accum, v: &Vec3| (accum || v.z > *self.camera.z_near())) {
+            return Ok(());
+        }
 
         // get fn for point on screen -> calculated z value based on projected coords
         let depth = |p: Vec2| -> f32 {
@@ -300,6 +310,7 @@ impl Camera {
         &mut self.z_near
     }
     pub fn rotate_self(&mut self, rotate: Quat) {
+        self.view_tensor = None;
         self.look_dir = rotate * self.look_dir;
         self.up_dir = rotate * self.up_dir;
     }

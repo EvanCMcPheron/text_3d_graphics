@@ -60,12 +60,12 @@ impl<B: Behaviour> Runner<B> {
     pub fn run(&mut self) -> std::result::Result<(), Box<dyn std::error::Error>> {
         execute!(
             std::io::stdout(),
-            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+            crossterm::terminal::Clear(crossterm::terminal::ClearType::Purge),
             cursor::MoveTo(0,0),
             cursor::Hide,
             cursor::SavePosition,
         )?;
-        loop {
+        for i in 0.. {
             let delta = if let Some(inst) = self.last_frame {
                 let elapsed = inst.elapsed().as_secs_f32();
                 let d = self.spf - elapsed;
